@@ -1,0 +1,18 @@
+import xarray as xr
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+!pip install cartopy
+import cartopy.crs as ccrs
+from cartopy.feature import ShapelyFeature
+from cartopy.io.shapereader import Reader
+import pandas as pd
+ds = xr.open_dataset('era5.nc')
+ds
+# List of variables
+variables = list(ds.data_vars)
+print("Variables in the dataset:", variables)
+ds['wind_speed'] = np.sqrt(ds['zonal_wind']**2 + ds['meridional_wind']**2)
+# List of variables
+variables = list(ds.data_vars)
+print("Variables in the dataset:", variables)

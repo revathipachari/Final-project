@@ -1,0 +1,19 @@
+# Calculate the 95th percentile for precipitation
+threshold_95 = df['precipitation'].quantile(0.95)
+# Identify extreme rain events based on the 95th percentile
+extreme_rain_events = df[df['precipitation'] > threshold_95]
+non_extreme_rain_events = df[df['precipitation'] < threshold_95]
+print(f"95th Percentile Threshold: {threshold_95}")
+print(f"Number of extreme rain events: {len(extreme_rain_events)}")
+# Visualization
+plt.figure(figsize=(10, 6))
+plt.plot(df['precipitation'], label='Rainfall')
+plt.axhline(threshold_95, color='red', linestyle='--', label='95th Percentile Threshold')
+plt.scatter(extreme_rain_events.index, extreme_rain_events['precipitation'], color='orange',
+label='Extreme Events')
+plt.title('Extreme Rain Events Based on 95th Percentile')
+plt.xlabel('Time')
+plt.ylabel('Rainfall')
+plt.legend()
+plt.grid()
+plt.show()

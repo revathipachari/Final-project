@@ -1,0 +1,4 @@
+# Check for missing values
+for var in variables:
+  missing = np.any(ds[var].values == fill_value)
+  print(f"Missing values in {var}: {missing.sum()}")

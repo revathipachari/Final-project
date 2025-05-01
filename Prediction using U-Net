@@ -1,0 +1,72 @@
+5.3.9 Comparison of U- Net and Random Forest for Prediction:
+5.3.9.1 Prediction using U-Net:
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_squared_error
+import xarray as xr # Assuming you're using xarray
+# --- Step 1: Extract input features and target from xarray.Dataset ---
+X = np.stack([
+df['soil_moisture'].values.flatten(),
+df['surface_pressure'].values.flatten(),
+df['wind_speed'].values.flatten(),
+df['total_column_water_vapor'].values.flatten(),
+df['2m_temperature'].values.flatten()
+], axis=1) # Shape: (samples, 5)
+y = df['precipitation'].values.flatten() # Shape: (samples,)
+# --- Step 2: Normalize inputs ---
+X = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0))
+# --- Step 3: Reshape for CNN input ---
+X_np = X.reshape(-1, 1, 1, 5) # 5 input channels
+y_np = y.reshape(-1, 1, 1, 1) # Single output channel
+# --- Step 4: Train/Test split ---
+X_train, X_test, y_train, y_test = train_test_split(X_np, y_np, test_size=0.2,
+random_state=42)
+# --- Step 5: Define Tiny U-Net Model ---
+def build_tiny_unet(input_shape):
+inputs = Input(shape=input_shape)
+c1 = Conv2D(8, 3, activation='relu', padding='same')(inputs)
+p1 = MaxPooling2D(pool_size=(1, 1))(c1)
+c2 = Conv2D(16, 3, activation='relu', padding='same')(p1)
+u1 = UpSampling2D(size=(1, 1))(c2)
+c3 = Conv2D(8, 3, activation='relu', padding='same')(u1)
+outputs = Conv2D(1, 1, activation='linear')(c3)
+return Model(inputs, outputs)
+# --- Step 6: Compile and Train Model ---
+model = build_tiny_unet((1, 1, 5))
+model.compile(optimizer=Adam(1e-3), loss='mse')
+history = model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=50,
+batch_size=16, verbose=1)
+# --- Step 7: Plot Loss ---
+plt.plot(history.history['loss'], label='Train Loss')
+plt.plot(history.history['val_loss'], label='Val Loss')
+plt.title("Loss Curve")
+plt.xlabel("Epochs")
+plt.ylabel("MSE")
+plt.legend()
+plt.grid(True)
+plt.show()
+# --- Step 8: Predict ---
+y_pred = model.predict(X_test)
+mse = mean_squared_error(y_test.flatten(), y_pred.flatten())
+r2 = r2_score(y_test.flatten(), y_pred.flatten())
+print(f"Validation MSE: {mse:.4f}")
+print(f"Validation R² Score: {r2:.4f}")
+# --- Step 9: Visualize Actual vs Predicted as Maps ---
+# Let's assume 17x17 grid (adjust based on your data)
+grid_size = (17, 17)
+num_maps = min(len(y_test), grid_size[0] * grid_size[1])
+actual_map = y_test[:num_maps].reshape(grid_size)
+predicted_map = y_pred[:num_maps].reshape(grid_size)
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.title("Actual Precipitation")
+plt.imshow(actual_map, cmap='Blues')
+plt.colorbar()
+plt.subplot(1, 2, 2)
+plt.title("Predicted Precipitation")
+plt.imshow(predicted_map, cmap='Blues')
+plt.colorbar()

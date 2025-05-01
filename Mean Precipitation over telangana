@@ -1,0 +1,24 @@
+fig = plt.figure(figsize=(11,8.5))
+ax = plt.axes(projection=ccrs.PlateCarree())
+ax.set_title('Mean precipitation')
+levels=np.arange(0,20,3)
+print(levels)
+# Add shapefile features
+fname='Admin2.shp'
+shape_feature =
+ShapelyFeature(Reader(fname).geometries(),ccrs.PlateCarree(),facecolor='none')
+ax.add_feature(shape_feature)
+ax.coastlines()
+# Plot the contour data
+cs=ax.contourf(ds_south.longitude,ds_south.latitude,1000*ds_south['precipitation'].mean(d
+im='time'),levels,cmap='RdBu_r',extend='both')
+# Draw gridlines in degrees over PlateCarree map
+gl = ax.gridlines(draw_labels=True,linewidth=.6, color='gray', alpha=0.5, linestyle='-')
+gl.top_labels = None
+gl.right_labels = None
+gl.xlabel_style = {"size" : 10}
+gl.ylabel_style = {"size" : 10}
+cb = plt.colorbar(cs,fraction=0.035,pad=0.1)
+cb.set_label('mm', fontsize=15)
+#plt.savefig(' Mean_precipitation')
+plt.show()
